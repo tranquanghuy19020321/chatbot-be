@@ -146,4 +146,30 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
     return await this.all(query, [userId, topK]);
   }
+
+  // Lấy k câu hỏi gần nhất của user theo thời gian insert
+  async getRecentQuestionsByUserId(
+    userId: number,
+    k: number = 10,
+  ): Promise<
+    Array<{
+      doc_id: string;
+      conversation_id: string;
+      text: string;
+    }>
+  > {
+    const query = `
+      SELECT 
+        doc_id,
+        conversation_id,
+        text,
+        rowid
+      FROM documents
+      WHERE user_id = ?
+      ORDER BY rowid DESC
+      LIMIT ?
+    `;
+
+    return await this.all(query, [userId, k]);
+  }
 }

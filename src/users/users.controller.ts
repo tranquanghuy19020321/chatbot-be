@@ -27,6 +27,9 @@ import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserRole } from './entities/user.entity';
 
 @ApiTags('Users')
 @Controller('users')
@@ -51,8 +54,11 @@ export class UsersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all users (paginated)' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get all users (paginated) - Admin only' })
   @ApiResponse({ status: 200, description: 'List of users with pagination' })
+  @ApiBearerAuth()
   async findAll(@Query() query: PaginationDto): Promise<{
     data: User[];
     pagination: {

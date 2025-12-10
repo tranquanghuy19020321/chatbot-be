@@ -17,7 +17,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { sub: number; email: string; name: string }) {
+  async validate(payload: { sub: number; email: string; name: string; role: string }) {
     try {
       const user = await this.usersService.findOne(payload.sub);
 
@@ -31,6 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         userId: payload.sub,
         email: payload.email,
         name: payload.name,
+        role: user.role,
       };
     } catch {
       throw new UnauthorizedException('Token không hợp lệ');

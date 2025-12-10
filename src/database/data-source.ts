@@ -1,6 +1,14 @@
 import { DataSource } from 'typeorm';
 import { User } from '../users/entities/user.entity';
+import { MentalHealthEvaluation } from '../users/entities/mental-health-evaluation.entity';
+import { Note } from '../notes/entities/note.entity';
+import { Test } from '../tests/entities/test.entity';
+import { Question } from '../tests/entities/question.entity';
 import { AddRefreshTokenToUser1733147000000 } from './migrations/1733147000000-AddRefreshTokenToUser';
+import { CreateMentalHealthEvaluations1764736066229 } from './migrations/1764736066229-CreateMentalHealthEvaluations';
+import { CreateNotes1733205000000 } from './migrations/1733205000000-CreateNotes';
+import { AddIsAiGeneratedToNotes1733215000000 } from './migrations/1733215000000-AddIsAiGeneratedToNotes';
+import { CreateTests1733500000000 } from './migrations/1733500000000-CreateTests';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -9,8 +17,14 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USERNAME || 'root',
   password: process.env.DATABASE_PASSWORD || 'Tran@48113983',
   database: process.env.DATABASE_NAME || 'sample',
-  entities: [User],
-  migrations: [AddRefreshTokenToUser1733147000000],
+  entities: [User, MentalHealthEvaluation, Note, Test, Question],
+  migrations: [
+    AddRefreshTokenToUser1733147000000,
+    CreateMentalHealthEvaluations1764736066229,
+    CreateNotes1733205000000,
+    AddIsAiGeneratedToNotes1733215000000,
+    CreateTests1733500000000,
+  ],
   synchronize: false,
   logging: true,
 });

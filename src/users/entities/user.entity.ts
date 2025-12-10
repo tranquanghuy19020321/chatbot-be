@@ -1,11 +1,20 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
+import { Note } from '../../notes/entities/note.entity';
+import { MentalHealthEvaluation } from './mental-health-evaluation.entity';
+import { Test } from '../../tests/entities/test.entity';
+
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
 
 @Entity('users')
 export class User {
@@ -59,6 +68,35 @@ export class User {
   })
   @Column({ nullable: true })
   refreshToken: string;
+
+  @ApiProperty({
+    description: 'User role',
+    enum: UserRole,
+    example: UserRole.USER,
+  })
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
+
+  @OneToMany(() => MentalHealthEvaluation, (evaluation) => evaluation.user)
+  mentalHealthEvaluations: MentalHealthEvaluation[];
+
+  @ApiProperty({
+    description: 'User notes',
+    type: () => [Note],
+  })
+  @OneToMany(() => Note, (note) => note.user)
+  notes: Note[];
+
+  @ApiProperty({
+    description: 'User tests',
+    type: () => [Test],
+  })
+  @OneToMany(() => Test, (test) => test.user)
+  tests: Test[];
 
   @ApiProperty({
     description: 'User creation timestamp',

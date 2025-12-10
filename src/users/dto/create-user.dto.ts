@@ -7,6 +7,8 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+// Note: Role is not included in CreateUserDto as admin users are created directly in database
+
 export class CreateUserDto {
   @ApiProperty({
     description: 'User email address',

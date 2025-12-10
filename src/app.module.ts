@@ -8,6 +8,8 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
 import { DatabaseModule } from './database/database.module';
+import { NotesModule } from './notes/notes.module';
+import { TestsModule } from './tests/tests.module';
 import { databaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
@@ -22,6 +24,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     UsersModule,
     AuthModule,
     ChatModule,
+    NotesModule,
+    TestsModule,
   ],
   controllers: [AppController],
   providers: [

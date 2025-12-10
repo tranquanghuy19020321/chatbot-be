@@ -70,6 +70,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       name: user.name,
+      role: user.role,
     };
 
     const [access_token, refresh_token] = await Promise.all([
