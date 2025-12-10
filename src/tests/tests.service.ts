@@ -243,7 +243,10 @@ export class TestsService {
     }
   }
 
-  async findAll(userId: number, paginationDto?: PaginationTestDto): Promise<PaginatedResult<Test>> {
+  async findAll(
+    userId: number,
+    paginationDto?: PaginationTestDto,
+  ): Promise<PaginatedResult<Test>> {
     const { page = 1, limit = 10 } = paginationDto || {};
     const skip = (page - 1) * limit;
 

@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ChatModule } from './chat/chat.module';
+import { databaseConfig } from './config/database.config';
 import { DatabaseModule } from './database/database.module';
 import { NotesModule } from './notes/notes.module';
 import { TestsModule } from './tests/tests.module';
-import { databaseConfig } from './config/database.config';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -19,7 +19,12 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot(databaseConfig),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) =>
+        databaseConfig(configService),
+      inject: [ConfigService],
+    }),
     DatabaseModule,
     UsersModule,
     AuthModule,

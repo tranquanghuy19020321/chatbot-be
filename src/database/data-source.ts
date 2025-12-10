@@ -1,9 +1,13 @@
+import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { MentalHealthEvaluation } from '../users/entities/mental-health-evaluation.entity';
 import { Note } from '../notes/entities/note.entity';
 import { Test } from '../tests/entities/test.entity';
 import { Question } from '../tests/entities/question.entity';
+
+// Load environment variables from .env file
+config();
 import { AddRefreshTokenToUser1733147000000 } from './migrations/1733147000000-AddRefreshTokenToUser';
 import { CreateMentalHealthEvaluations1764736066229 } from './migrations/1764736066229-CreateMentalHealthEvaluations';
 import { CreateNotes1733205000000 } from './migrations/1733205000000-CreateNotes';
