@@ -1,4 +1,5 @@
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -6,9 +7,17 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Get ConfigService
+  const configService = app.get(ConfigService);
+
+  // Get CORS origins from env
+  const corsOrigins = configService
+    .get<string>('CORS_ORIGINS', 'http://localhost:5173')
+    .split(',');
+
   // Enable CORS
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
