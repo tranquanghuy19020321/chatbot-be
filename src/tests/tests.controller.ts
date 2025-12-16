@@ -47,8 +47,16 @@ export class TestsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all tests for current user with pagination' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 10)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 10)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Paginated list of tests',
@@ -110,6 +118,22 @@ export class TestsController {
     @Body() updateTestDto: UpdateTestDto,
   ): Promise<Test> {
     return this.testsService.update(+id, userId, updateTestDto);
+  }
+
+  @Patch(':id/complete')
+  @ApiOperation({ summary: 'Mark a test as completed' })
+  @ApiResponse({
+    status: 200,
+    description: 'Test marked as completed successfully',
+    type: Test,
+  })
+  @ApiResponse({ status: 404, description: 'Test not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  markAsCompleted(
+    @Param('id') id: string,
+    @CurrentUser('sub') { userId }: { userId: number },
+  ): Promise<Test> {
+    return this.testsService.markAsCompleted(+id, userId);
   }
 
   @Delete(':id')

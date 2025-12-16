@@ -1,10 +1,10 @@
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
-import { User } from '../users/entities/user.entity';
-import { MentalHealthEvaluation } from '../users/entities/mental-health-evaluation.entity';
 import { Note } from '../notes/entities/note.entity';
-import { Test } from '../tests/entities/test.entity';
 import { Question } from '../tests/entities/question.entity';
+import { Test } from '../tests/entities/test.entity';
+import { MentalHealthEvaluation } from '../users/entities/mental-health-evaluation.entity';
+import { User } from '../users/entities/user.entity';
 
 // Load environment variables from .env file
 config();
@@ -13,7 +13,8 @@ config();
 // import { CreateNotes1733205000000 } from './migrations/1733205000000-CreateNotes';
 // import { AddIsAiGeneratedToNotes1733215000000 } from './migrations/1733215000000-AddIsAiGeneratedToNotes';
 // import { CreateTests1733500000000 } from './migrations/1733500000000-CreateTests';
-import { UpdateQuestionEntity1765883141024 } from './migrations/1765883141024-UpdateQuestionEntity';
+// import { UpdateQuestionEntity1765883141024 } from './migrations/1765883141024-UpdateQuestionEntity';
+import { AddIsCompletedToTest1765898825210 } from './migrations/1765898825210-AddIsCompletedToTest';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -29,7 +30,8 @@ export const AppDataSource = new DataSource({
     // CreateNotes1733205000000,
     // AddIsAiGeneratedToNotes1733215000000,
     // CreateTests1733500000000,
-    UpdateQuestionEntity1765883141024,
+    // UpdateQuestionEntity1765883141024,
+    AddIsCompletedToTest1765898825210,
   ],
   synchronize: false,
   logging: true,

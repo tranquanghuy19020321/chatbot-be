@@ -1,6 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 import { QuestionDto } from './question.dto';
 
 export class UpdateTestDto {
@@ -21,4 +26,13 @@ export class UpdateTestDto {
   @ValidateNested({ each: true })
   @Type(() => QuestionDto)
   questions?: QuestionDto[];
+
+  @ApiProperty({
+    description: 'Whether the test has been completed',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isCompleted?: boolean;
 }

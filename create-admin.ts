@@ -1,6 +1,6 @@
+import { hash } from 'bcrypt';
 import { AppDataSource } from './src/database/data-source';
 import { User, UserRole } from './src/users/entities/user.entity';
-import { hash } from 'bcrypt';
 
 async function createAdminUser() {
   try {
@@ -11,7 +11,7 @@ async function createAdminUser() {
 
     // Check if admin already exists
     const existingAdmin = await userRepository.findOne({
-      where: { email: 'admin@example.com' }
+      where: { email: 'admin@example.com' },
     });
 
     if (existingAdmin) {
@@ -22,7 +22,7 @@ async function createAdminUser() {
 
     // Create admin user
     const hashedPassword = await hash('admin123', 10);
-    
+
     const adminUser = userRepository.create({
       email: 'admin@example.com',
       name: 'System Administrator',
@@ -35,7 +35,7 @@ async function createAdminUser() {
     console.log('Admin user created successfully');
     console.log('Email: admin@example.com');
     console.log('Password: admin123');
-    
+
     await AppDataSource.destroy();
   } catch (error) {
     console.error('Error creating admin user:', error);

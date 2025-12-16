@@ -304,6 +304,16 @@ export class TestsService {
       })) as Question[];
     }
 
+    if (updateTestDto.isCompleted !== undefined) {
+      test.isCompleted = updateTestDto.isCompleted;
+    }
+
+    return await this.testRepository.save(test);
+  }
+
+  async markAsCompleted(id: number, userId: number): Promise<Test> {
+    const test = await this.findOne(id, userId);
+    test.isCompleted = true;
     return await this.testRepository.save(test);
   }
 

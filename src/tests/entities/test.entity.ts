@@ -1,4 +1,5 @@
 import {
+  Column,
   CreateDateColumn,
   Entity,
   ManyToOne,
@@ -32,6 +33,13 @@ export class Test {
   })
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ApiProperty({
+    description: 'Whether the test has been completed',
+    example: false,
+  })
+  @Column({ default: false })
+  isCompleted: boolean;
 
   @ApiProperty({
     description: 'User who created the test',
