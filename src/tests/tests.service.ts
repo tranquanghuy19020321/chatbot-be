@@ -304,9 +304,7 @@ export class TestsService {
       })) as Question[];
     }
 
-    if (updateTestDto.isCompleted !== undefined) {
-      test.isCompleted = updateTestDto.isCompleted;
-    }
+    test.isCompleted = true;
 
     return await this.testRepository.save(test);
   }
