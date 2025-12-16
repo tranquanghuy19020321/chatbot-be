@@ -13,7 +13,7 @@ fi
 
 # Run migrations
 echo "Running database migrations..."
-npx ts-node run-migration.ts
+npm run migration:run:prod
 
 if [ $? -ne 0 ]; then
     echo "Migration failed!"
