@@ -8,11 +8,11 @@ import { Question } from '../tests/entities/question.entity';
 
 // Load environment variables from .env file
 config();
-import { AddRefreshTokenToUser1733147000000 } from './migrations/1733147000000-AddRefreshTokenToUser';
-import { CreateMentalHealthEvaluations1764736066229 } from './migrations/1764736066229-CreateMentalHealthEvaluations';
-import { CreateNotes1733205000000 } from './migrations/1733205000000-CreateNotes';
-import { AddIsAiGeneratedToNotes1733215000000 } from './migrations/1733215000000-AddIsAiGeneratedToNotes';
-import { CreateTests1733500000000 } from './migrations/1733500000000-CreateTests';
+// import { AddRefreshTokenToUser1733147000000 } from './migrations/1733147000000-AddRefreshTokenToUser';
+// import { CreateMentalHealthEvaluations1764736066229 } from './migrations/1764736066229-CreateMentalHealthEvaluations';
+// import { CreateNotes1733205000000 } from './migrations/1733205000000-CreateNotes';
+// import { AddIsAiGeneratedToNotes1733215000000 } from './migrations/1733215000000-AddIsAiGeneratedToNotes';
+// import { CreateTests1733500000000 } from './migrations/1733500000000-CreateTests';
 import { UpdateQuestionEntity1765883141024 } from './migrations/1765883141024-UpdateQuestionEntity';
 
 export const AppDataSource = new DataSource({
@@ -24,11 +24,11 @@ export const AppDataSource = new DataSource({
   database: process.env.DATABASE_NAME || 'sample',
   entities: [User, MentalHealthEvaluation, Note, Test, Question],
   migrations: [
-    AddRefreshTokenToUser1733147000000,
-    CreateMentalHealthEvaluations1764736066229,
-    CreateNotes1733205000000,
-    AddIsAiGeneratedToNotes1733215000000,
-    CreateTests1733500000000,
+    // AddRefreshTokenToUser1733147000000,
+    // CreateMentalHealthEvaluations1764736066229,
+    // CreateNotes1733205000000,
+    // AddIsAiGeneratedToNotes1733215000000,
+    // CreateTests1733500000000,
     UpdateQuestionEntity1765883141024,
   ],
   synchronize: false,
