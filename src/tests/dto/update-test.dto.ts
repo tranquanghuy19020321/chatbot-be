@@ -10,7 +10,8 @@ export class UpdateTestDto {
     example: [
       {
         question: 'What is your favorite color?',
-        answer: 'Blue',
+        answer: 3,
+        questionType: 'gad',
       },
     ],
     required: false,

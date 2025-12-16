@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsEnum } from 'class-validator';
 
 export class QuestionDto {
   @ApiProperty({
@@ -12,9 +12,18 @@ export class QuestionDto {
 
   @ApiProperty({
     description: 'Answer to the question',
-    example: 'Blue',
+    example: 3,
   })
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  answer: string;
+  answer: number;
+
+  @ApiProperty({
+    description: 'Type of question',
+    example: 'gad',
+    enum: ['gad', 'mbi', 'phq', 'pss'],
+  })
+  @IsEnum(['gad', 'mbi', 'phq', 'pss'])
+  @IsNotEmpty()
+  questionType: 'gad' | 'mbi' | 'phq' | 'pss';
 }

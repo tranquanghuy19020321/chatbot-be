@@ -13,6 +13,7 @@ import { CreateMentalHealthEvaluations1764736066229 } from './migrations/1764736
 import { CreateNotes1733205000000 } from './migrations/1733205000000-CreateNotes';
 import { AddIsAiGeneratedToNotes1733215000000 } from './migrations/1733215000000-AddIsAiGeneratedToNotes';
 import { CreateTests1733500000000 } from './migrations/1733500000000-CreateTests';
+import { UpdateQuestionEntity1765883141024 } from './migrations/1765883141024-UpdateQuestionEntity';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -28,6 +29,7 @@ export const AppDataSource = new DataSource({
     CreateNotes1733205000000,
     AddIsAiGeneratedToNotes1733215000000,
     CreateTests1733500000000,
+    UpdateQuestionEntity1765883141024,
   ],
   synchronize: false,
   logging: true,

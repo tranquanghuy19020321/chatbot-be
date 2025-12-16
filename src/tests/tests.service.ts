@@ -299,6 +299,7 @@ export class TestsService {
       test.questions = updateTestDto.questions.map((q) => ({
         question: q.question,
         answer: q.answer,
+        questionType: q.questionType,
         test,
       })) as Question[];
     }

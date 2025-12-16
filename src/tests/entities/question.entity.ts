@@ -27,10 +27,18 @@ export class Question {
 
   @ApiProperty({
     description: 'Answer to the question',
-    example: 'Blue',
+    example: 3,
   })
-  @Column({ type: 'text' })
-  answer: string;
+  @Column({ type: 'int' })
+  answer: number;
+
+  @ApiProperty({
+    description: 'Type of question',
+    example: 'gad',
+    enum: ['gad', 'mbi', 'phq', 'pss'],
+  })
+  @Column({ type: 'enum', enum: ['gad', 'mbi', 'phq', 'pss'] })
+  questionType: 'gad' | 'mbi' | 'phq' | 'pss';
 
   @ApiProperty({
     description: 'Question creation date',
