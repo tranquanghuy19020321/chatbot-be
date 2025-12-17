@@ -57,7 +57,9 @@ export class ChatService {
   async streamChatResponse(
     query: string,
   ): Promise<AsyncGenerator<string, void, unknown>> {
-    const model = this.ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = this.ai.getGenerativeModel({
+      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.5-flash'),
+    });
     const result = await model.generateContentStream(query);
 
     return this.streamGenerator(result.stream);
@@ -164,7 +166,9 @@ export class ChatService {
       Answer:`;
 
     // Generate streaming response
-    const model = this.ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = this.ai.getGenerativeModel({
+      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.5-flash'),
+    });
     const result = await model.generateContentStream(prompt);
 
     return this.streamGenerator(result.stream);
@@ -233,7 +237,9 @@ export class ChatService {
       `;
 
     // Generate evaluation response
-    const model = this.ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = this.ai.getGenerativeModel({
+      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.5-flash'),
+    });
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 

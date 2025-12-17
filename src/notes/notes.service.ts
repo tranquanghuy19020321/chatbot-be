@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from 'dayjs';
 import { Repository } from 'typeorm';
@@ -13,6 +14,7 @@ export class NotesService {
     @InjectRepository(Note)
     private notesRepository: Repository<Note>,
     private chatService: ChatService,
+    private configService: ConfigService,
   ) {}
 
   async create(createNoteDto: CreateNoteDto, userId: number): Promise<Note> {
@@ -127,7 +129,7 @@ export class NotesService {
 
     // Gọi AI để generate schedule
     const model = this.chatService['ai'].getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.5-flash'),
     });
     const result = await model.generateContent(prompt);
     const text = result.response.text();

@@ -44,7 +44,10 @@ export class TestsService {
   async generateQuestionsWithAI(): Promise<any> {
     try {
       const model = this.ai.getGenerativeModel({
-        model: 'gemini-2.0-flash-exp',
+        model: this.configService.get<string>(
+          'GEMINI_MODEL',
+          'gemini-2.5-flash',
+        ),
       });
 
       const prompt = `Create 5 mental health assessment questions for evaluating user's mental state.
@@ -373,7 +376,10 @@ export class TestsService {
   ): Promise<TestMentalHealthEvaluationDto> {
     try {
       const model = this.ai.getGenerativeModel({
-        model: 'gemini-2.0-flash-exp',
+        model: this.configService.get<string>(
+          'GEMINI_MODEL',
+          'gemini-2.5-flash',
+        ),
       });
 
       const context = questions
