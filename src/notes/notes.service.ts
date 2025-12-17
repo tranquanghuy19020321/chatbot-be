@@ -129,7 +129,10 @@ export class NotesService {
 
     // Gọi AI để generate schedule
     const model = this.chatService['ai'].getGenerativeModel({
-      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.5-flash'),
+      model: this.configService.get<string>(
+        'GEMINI_SUPER_MODEL',
+        'gemini-2.5-flash',
+      ),
     });
     const result = await model.generateContent(prompt);
     const text = result.response.text();

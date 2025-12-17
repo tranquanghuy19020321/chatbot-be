@@ -46,7 +46,7 @@ export class TestsService {
       const model = this.ai.getGenerativeModel({
         model: this.configService.get<string>(
           'GEMINI_MODEL',
-          'gemini-2.5-flash',
+          'gemini-2.5-flash-lite',
         ),
       });
 
@@ -378,7 +378,7 @@ export class TestsService {
       const model = this.ai.getGenerativeModel({
         model: this.configService.get<string>(
           'GEMINI_MODEL',
-          'gemini-2.5-flash',
+          'gemini-2.5-flash-lite',
         ),
       });
 

@@ -167,7 +167,10 @@ export class ChatService {
 
     // Generate streaming response
     const model = this.ai.getGenerativeModel({
-      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.5-flash'),
+      model: this.configService.get<string>(
+        'GEMINI_SUPER_MODEL',
+        'gemini-2.5-flash',
+      ),
     });
     const result = await model.generateContentStream(prompt);
 
@@ -238,7 +241,10 @@ export class ChatService {
 
     // Generate evaluation response
     const model = this.ai.getGenerativeModel({
-      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.5-flash'),
+      model: this.configService.get<string>(
+        'GEMINI_MODEL',
+        'gemini-2.5-flash-lite',
+      ),
     });
     const result = await model.generateContent(prompt);
     const text = result.response.text();
