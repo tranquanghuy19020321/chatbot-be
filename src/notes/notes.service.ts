@@ -108,7 +108,7 @@ export class NotesService {
     
       [
         {
-          "time": "YYYY-DD-MMTHH:mm:ss.sssZ" con vert to UTC+0,
+          "time": "YYYY-MM-DDTHH:mm:ss.sssZ" con vert to UTC+0,
           "content": "Description of the activity",
           "importance": "medium" or "critical",
           "isAiGenerated": true

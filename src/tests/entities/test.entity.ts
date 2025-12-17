@@ -1,15 +1,18 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   Column,
   CreateDateColumn,
   Entity,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../../users/entities/user.entity';
 import { Question } from './question.entity';
+import { TestMentalHealthEvaluation } from './test-mental-health-evaluation.entity';
 
 @Entity('tests')
 export class Test {
@@ -52,6 +55,25 @@ export class Test {
     description: 'Questions in this test',
     type: () => [Question],
   })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map((question) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { test, ...questionWithoutTest } = question;
+        return questionWithoutTest;
+      });
+    }
+    return value;
+  })
   @OneToMany(() => Question, (question) => question.test, { cascade: true })
   questions: Question[];
+
+  @ApiProperty({
+    description: 'Mental health evaluation for this test',
+    type: () => TestMentalHealthEvaluation,
+  })
+  @OneToOne(() => TestMentalHealthEvaluation, (evaluation) => evaluation.test, {
+    cascade: true,
+  })
+  mentalHealthEvaluation?: TestMentalHealthEvaluation;
 }

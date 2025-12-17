@@ -5,8 +5,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 import { PaginationTestDto } from './dto/pagination-test.dto';
+import { TestMentalHealthEvaluationDto } from './dto/test-mental-health-evaluation.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
 import { Question } from './entities/question.entity';
+import { TestMentalHealthEvaluation } from './entities/test-mental-health-evaluation.entity';
 import { Test } from './entities/test.entity';
 
 @Injectable()
@@ -18,6 +20,8 @@ export class TestsService {
     private readonly testRepository: Repository<Test>,
     @InjectRepository(Question)
     private readonly questionRepository: Repository<Question>,
+    @InjectRepository(TestMentalHealthEvaluation)
+    private readonly testMentalHealthEvaluationRepository: Repository<TestMentalHealthEvaluation>,
     private configService: ConfigService,
   ) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
@@ -252,7 +256,7 @@ export class TestsService {
 
     const [tests, total] = await this.testRepository.findAndCount({
       where: { user: { id: userId } },
-      relations: ['questions'],
+      relations: [],
       order: { createdAt: 'DESC' },
       skip,
       take: limit,
@@ -274,7 +278,7 @@ export class TestsService {
   async findOne(id: number, userId: number): Promise<Test> {
     const test = await this.testRepository.findOne({
       where: { id, user: { id: userId } },
-      relations: ['questions'],
+      relations: ['questions', 'mentalHealthEvaluation'],
     });
 
     if (!test) {
@@ -305,8 +309,17 @@ export class TestsService {
     }
 
     test.isCompleted = true;
+    const savedTest = await this.testRepository.save(test);
 
-    return await this.testRepository.save(test);
+    // Generate AI evaluation after completing the test
+    if (updateTestDto.questions) {
+      await this.generateMentalHealthEvaluation(
+        savedTest.id,
+        updateTestDto.questions,
+      );
+    }
+
+    return savedTest;
   }
 
   async markAsCompleted(id: number, userId: number): Promise<Test> {
@@ -318,5 +331,137 @@ export class TestsService {
   async remove(id: number, userId: number): Promise<void> {
     const test = await this.findOne(id, userId);
     await this.testRepository.remove(test);
+  }
+
+  private async generateMentalHealthEvaluation(
+    testId: number,
+    questions: any[],
+  ): Promise<TestMentalHealthEvaluation> {
+    try {
+      // Generate AI assessment
+      const aiAssessment = await this.generateAIAssessment(questions);
+
+      // Save to database
+      const evaluation = this.testMentalHealthEvaluationRepository.create({
+        testId: testId,
+        emotionState: aiAssessment.emotion_state,
+        stressLevel: aiAssessment.stress_level,
+        gad7Score: aiAssessment.gad7_score,
+        gad7Assessment: aiAssessment.gad7_assessment,
+        pss10Score: aiAssessment.pss10_score,
+        pss10Assessment: aiAssessment.pss10_assessment,
+        phq9Score: aiAssessment.phq9_score,
+        phq9Assessment: aiAssessment.phq9_assessment,
+        mbiEmotionalExhaustion: aiAssessment.mbi_ss_score.emotional_exhaustion,
+        mbiCynicism: aiAssessment.mbi_ss_score.cynicism,
+        mbiProfessionalEfficacy:
+          aiAssessment.mbi_ss_score.professional_efficacy,
+        mbiAssessment: aiAssessment.mbi_ss_score.assessment,
+        overallMentalHealth: aiAssessment.overall_mental_health,
+        recommendations: aiAssessment.recommendations,
+        riskLevel: aiAssessment.risk_level,
+      });
+      return await this.testMentalHealthEvaluationRepository.save(evaluation);
+    } catch (error) {
+      console.error('Error generating mental health evaluation:', error);
+      throw new Error('Failed to generate mental health evaluation');
+    }
+  }
+
+  private async generateAIAssessment(
+    questions: any[],
+  ): Promise<TestMentalHealthEvaluationDto> {
+    try {
+      const model = this.ai.getGenerativeModel({
+        model: 'gemini-2.0-flash-exp',
+      });
+
+      const context = questions
+        .map(
+          (q) =>
+            `Question: ${q.question}\nAnswer: ${q.answer}\nType: ${q.questionType}`,
+        )
+        .join('\n\n');
+
+      const prompt = `
+        Based on the following system and context, analyze the user's psychological state and return the required metrics.
+
+        System:
+          You are a compassionate virtual psychological assessment assistant.
+          You must:
+          - Provide emotional understanding, not clinical diagnosis
+          - Use international psychological scales correctly (GAD-7, PSS-10, MBI-SS)
+          - Be objective, concise, and avoid medical claims
+          - Always answer in Vietnamese
+          - Context below is the answers from the user to mental health assessment questions
+          - With pss type question: 0 = Không bao giờ, 1 = Thỉnh thoảng, 2 = Khá thường xuyên, 3 = Rất thường xuyên
+          - With gad type question: 0 = Không, 1 = Vài ngày, 2 = Hơn một nửa số ngày, 3 = Gần như mỗi ngày
+          - With phq type question: 0 = Không, 1 = Vài ngày, 2 = Hơn một nửa số ngày, 3 = Gần như mỗi ngày
+          - With mbi type question: 0 = Không, 1 = Vài ngày, 2 = Hơn một nửa số ngày, 3 = Gần như mỗi ngày
+
+        Context:
+        ${context}
+
+        Task:
+        Based on the context, evaluate and return the following fields in JSON format, no more extra text outside the JSON:
+
+        {
+          "emotion_state": "<HAPPY | SAD | ANGRY | NEUTRAL>",
+          "stress_level": <0-100>, 
+          "gad7_score": <0-21>,
+          "gad7_assessment": "<mức độ>",
+          "pss10_score": <0-40>,
+          "pss10_assessment": "<mức độ>",
+          "phq9_score": <0-27>,
+          "phq9_assessment": "<mức độ>",
+          "mbi_ss_score": {
+              "emotional_exhaustion": <0-30>,
+              "cynicism": <0-30>,
+              "professional_efficacy": <0-30>,
+              "assessment": "<mức độ>"
+          },
+          "overall_mental_health": "<đánh giá ngắn gọn, tối đa 3 câu>",
+          "risk_level": "<LOW | MODERATE | HIGH | CRITICAL>",
+          "recommendations": "<lời khuyên cải thiện sức khỏe tinh thần>",
+        }
+
+        Rules:
+        - "emotion_state" must be EXACTLY one of: HAPPY, SAD, ANGRY, NEUTRAL
+        - If context is unclear, infer the most *likely* state based on language/emotion patterns
+        - Scale calculations must follow official scoring guidelines
+        - "overall_mental_health" must be empathetic, non-judgmental, and non-medical
+        - If context is insufficient, return 0 for all fields and message the user to provide more information.
+        - ALWAYS respond in Vietnamese
+
+        Answer:
+      `;
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
+
+      // Clean and parse the response
+      const clean = text.replace(/```json\n?|\n?```/g, '').trim();
+
+      try {
+        const aiResult = JSON.parse(clean);
+        return aiResult;
+      } catch (parseError) {
+        console.error('Error parsing AI assessment response:', parseError);
+        throw new Error('Failed to parse AI assessment response');
+      }
+    } catch (error) {
+      console.error('Error generating AI assessment:', error);
+      throw new Error('Failed to generate AI assessment');
+    }
+  }
+
+  async getMentalHealthEvaluation(
+    testId: number,
+  ): Promise<TestMentalHealthEvaluation | null> {
+    return await this.testMentalHealthEvaluationRepository.findOne({
+      where: { testId },
+      relations: ['test'],
+    });
   }
 }

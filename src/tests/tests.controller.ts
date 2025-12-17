@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -158,5 +159,31 @@ export class TestsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   generateQuestions(): Promise<GeneratedQuestionsResponseDto> {
     return this.testsService.generateQuestionsWithAI();
+  }
+
+  @Get(':id/mental-health-evaluation')
+  @ApiOperation({ summary: 'Get mental health evaluation for a test' })
+  @ApiResponse({
+    status: 200,
+    description: 'Mental health evaluation retrieved successfully',
+    type: 'TestMentalHealthEvaluation',
+  })
+  @ApiResponse({ status: 404, description: 'Evaluation not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getMentalHealthEvaluation(
+    @Param('id') id: string,
+    @CurrentUser('sub') { userId }: { userId: number },
+  ) {
+    // First verify that the test belongs to the user
+    await this.testsService.findOne(+id, userId);
+
+    const evaluation = await this.testsService.getMentalHealthEvaluation(+id);
+    if (!evaluation) {
+      throw new NotFoundException(
+        'Mental health evaluation not found for this test',
+      );
+    }
+
+    return evaluation;
   }
 }
