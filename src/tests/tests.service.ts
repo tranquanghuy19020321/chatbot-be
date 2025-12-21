@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Repository } from 'typeorm';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
-import { PaginationTestDto } from './dto/pagination-test.dto';
 import { TestMentalHealthEvaluationDto } from './dto/test-mental-health-evaluation.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
 import { Question } from './entities/question.entity';
@@ -252,7 +252,7 @@ export class TestsService {
 
   async findAll(
     userId: number,
-    paginationDto?: PaginationTestDto,
+    paginationDto?: PaginationDto,
   ): Promise<PaginatedResult<Test>> {
     const { page = 1, limit = 10 } = paginationDto || {};
     const skip = (page - 1) * limit;

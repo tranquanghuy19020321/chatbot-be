@@ -17,11 +17,11 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 import { GeneratedQuestionsResponseDto } from './dto/generated-question.dto';
-import { PaginationTestDto } from './dto/pagination-test.dto';
 import { UpdateTestDto } from './dto/update-test.dto';
 import { Test } from './entities/test.entity';
 import { TestsService } from './tests.service';
@@ -83,7 +83,7 @@ export class TestsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(
     @CurrentUser('sub') { userId }: { userId: number },
-    @Query() paginationDto: PaginationTestDto,
+    @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedResult<Test>> {
     return this.testsService.findAll(userId, paginationDto);
   }
