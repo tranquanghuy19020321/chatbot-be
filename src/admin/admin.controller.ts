@@ -3,6 +3,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Post,
   Query,
   Res,
   UseGuards,
@@ -246,7 +247,7 @@ export class AdminController {
     return this.adminService.GetADminDashboardEmo(query);
   }
 
-  @Get('/dashboard/analyze-statistic/stream')
+  @Post('/dashboard/analyze-statistic/stream')
   @ApiOperation({
     summary: 'Stream AI analysis of mental health statistics (Admin only)',
     description:
