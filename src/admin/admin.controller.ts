@@ -21,7 +21,11 @@ import { Test } from '../tests/entities/test.entity';
 import { MentalHealthEvaluation } from '../users/entities/mental-health-evaluation.entity';
 import { UserRole } from '../users/entities/user.entity';
 import { AdminService } from './admin.service';
+import { DailyEmoStatisticDto } from './dto/admin-dashboard-emo-response';
+import { AdminDashboardSummaryDto } from './dto/admin-dashboard-summary.dto';
 import { AdminTestQueryDto } from './dto/admin-test-query.dto';
+import { MentalHealthStatisticQueryDto } from './dto/mental-health-statistic-query.dto';
+import { DailyMentalHealthStatisticDto } from './dto/mental-health-statistic-response.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -142,5 +146,77 @@ export class AdminController {
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<MentalHealthEvaluation> {
     return this.adminService.getLatestMentalHealthByUserId(userId);
+  }
+
+  @Get('/dashboard/mental-health-statistic')
+  @ApiOperation({
+    summary: 'Get daily mental health statistics for all users (Admin only)',
+    description:
+      'Retrieve daily average mental health statistics for all users within a specified date range. Returns complete date range with zero values for days without data.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daily mental health statistics retrieved successfully',
+    type: [DailyMentalHealthStatisticDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  async getMentalHealthStatistic(
+    @Query() query: MentalHealthStatisticQueryDto,
+  ): Promise<DailyMentalHealthStatisticDto[]> {
+    return this.adminService.getMentalHealthStatisitics(query);
+  }
+
+  @Get('/dashboard/summary')
+  @ApiOperation({
+    summary: 'Get daily admin dashboard summary for all users (Admin only)',
+    description:
+      'Retrieve daily average admin dashboard summary for all users within a specified date range. Returns complete date range with zero values for days without data.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daily admin dashboard summary retrieved successfully',
+    type: [AdminDashboardSummaryDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  async getAdminDashboardSummary(): Promise<AdminDashboardSummaryDto> {
+    return this.adminService.GetAdminDashboardSummary();
+  }
+
+  @Get('/dashboard/emo')
+  @ApiOperation({
+    summary: 'Get daily admin dashboard emo',
+    description: '...',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daily admin dashboard emo retrieved successfully',
+    type: [DailyEmoStatisticDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  async getAdminDasboardEmoNow(
+    @Query() query: MentalHealthStatisticQueryDto,
+  ): Promise<DailyEmoStatisticDto[]> {
+    return this.adminService.GetADminDashboardEmo(query);
   }
 }
