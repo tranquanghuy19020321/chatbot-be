@@ -4,6 +4,7 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -13,6 +14,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -218,5 +220,75 @@ export class AdminController {
     @Query() query: MentalHealthStatisticQueryDto,
   ): Promise<DailyEmoStatisticDto[]> {
     return this.adminService.GetADminDashboardEmo(query);
+  }
+
+  @Get('/dashboard/analyze-statistic')
+  @ApiOperation({
+    summary: 'Get daily admin dashboard emo',
+    description: '...',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daily admin dashboard emo retrieved successfully',
+    type: [DailyEmoStatisticDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  async analyzeStatistic(
+    @Query() query: MentalHealthStatisticQueryDto,
+  ): Promise<DailyEmoStatisticDto[]> {
+    return this.adminService.GetADminDashboardEmo(query);
+  }
+
+  @Get('/dashboard/analyze-statistic/stream')
+  @ApiOperation({
+    summary: 'Stream AI analysis of mental health statistics (Admin only)',
+    description:
+      'Get a streaming AI analysis of mental health and emotional statistics within a date range. Returns real-time AI-generated insights in Vietnamese.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'AI analysis stream started successfully',
+    schema: {
+      type: 'string',
+      description: 'Streaming text analysis in Vietnamese',
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  async streamAnalyzeStatistic(
+    @Query() query: MentalHealthStatisticQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    try {
+      const stream =
+        await this.adminService.streamAnalyzeStatisticResponse(query);
+
+      for await (const chunk of stream) {
+        res.write(chunk);
+      }
+
+      res.end();
+    } catch (error: any) {
+      res.status(500).write(`Error: ${error?.message}`);
+      res.end();
+    }
   }
 }

@@ -351,26 +351,6 @@ export class ChatService {
     return data;
   }
 
-  private mapEntityToDto(
-    entity: MentalHealthEvaluation,
-  ): MentalHealthEvaluationDto {
-    return {
-      emotion_state: entity.emotionState,
-      stress_level: entity.stressLevel,
-      gad7_score: entity.gad7Score,
-      gad7_assessment: entity.gad7Assessment,
-      pss10_score: entity.pss10Score,
-      pss10_assessment: entity.pss10Assessment,
-      mbi_ss_score: {
-        emotional_exhaustion: entity.mbiEmotionalExhaustion,
-        cynicism: entity.mbiCynicism,
-        professional_efficacy: entity.mbiProfessionalEfficacy,
-        assessment: entity.mbiAssessment,
-      },
-      overall_mental_health: entity.overallMentalHealth,
-    };
-  }
-
   async getMentalHealthEvaluationHistory(
     userId: number,
     limit: number = 10,

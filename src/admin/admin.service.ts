@@ -1,4 +1,6 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -17,6 +19,8 @@ dayjs.extend(isSameOrBefore);
 
 @Injectable()
 export class AdminService {
+  private ai: GoogleGenerativeAI;
+
   constructor(
     @InjectRepository(Test)
     private readonly testRepository: Repository<Test>,
@@ -24,7 +28,16 @@ export class AdminService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(MentalHealthEvaluation)
     private readonly mentalHealthEvaluationRepository: Repository<MentalHealthEvaluation>,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (!apiKey) {
+      throw new Error(
+        'GEMINI_API_KEY is not configured in environment variables',
+      );
+    }
+    this.ai = new GoogleGenerativeAI(apiKey);
+  }
 
   async getTestsByUserId(
     query: AdminTestQueryDto,
@@ -304,5 +317,85 @@ export class AdminService {
     });
 
     return formattedResult;
+  }
+
+  async streamAnalyzeStatisticResponse(
+    query: MentalHealthStatisticQueryDto,
+  ): Promise<AsyncGenerator<string, void, unknown>> {
+    const mentalHealthStatistic = await this.getMentalHealthStatisitics(query);
+    const emoStatistic = await this.GetADminDashboardEmo(query);
+    const summary = await this.GetAdminDashboardSummary();
+
+    const prompt = `
+      You are an AI assistant specialized in analyzing aggregated mental health data for an educational admin dashboard.
+      CONTEXT:
+      The data represents aggregated mental health evaluations of students over the period from ${query?.startDate} to ${query?.endDate}. 
+      All values are group-level averages or counts, not individual diagnoses.
+
+      YOUR TASK:
+      Analyze the provided data based on:
+      1. Daily average psychological indicators:
+        - Stress Level
+        - GAD-7 (anxiety indicator)
+        - PSS-10 (perceived stress)
+        - MBI:
+          - Emotional Exhaustion
+          - Cynicism
+          - Professional Efficacy
+        - Number of records per day
+
+      2. Daily emotional distribution:
+        - happy, sad, angry, neutral
+
+      3. Overall participation statistics:
+        - Total members
+        - Number of students who completed mental health evaluations
+
+      ANALYSIS REQUIREMENTS:
+      - Identify overall trends across ${query?.startDate} to ${query?.endDate} (increasing, decreasing, stabilizing).
+      - Interpret indicator levels as low / moderate / high based on commonly accepted scale meanings, WITHOUT making medical or clinical diagnoses.
+      - Compare psychological indicators with emotional distribution patterns.
+      - Assess how the number of daily records affects data reliability.
+      - Analyze participation rate and comment on data representativeness.
+      - Only return in Vietnamese.
+
+      OUTPUT GUIDELINES:
+      - Write in clear, professional, and neutral English.
+      - Structure the output into clear sections:
+        1. Data Overview
+        2. Mental Health Trends
+        3. Emotional Pattern Analysis
+        4. Potential Risk Signals
+        5. Data Reliability & Participation
+        6. System-Level Recommendations
+
+      CONSTRAINTS:
+      - Do NOT provide medical diagnoses or individual treatment advice.
+      - Do NOT use judgmental or alarmist language.
+      - Focus on population-level insights only.
+      - 'totalRecords' is the number of users evaluated that day
+
+      INPUT DATA:
+      Mental Health Statistics: ${JSON.stringify(mentalHealthStatistic)}
+      Emotional Statistics: ${JSON.stringify(emoStatistic)}
+      Summary Statistics: ${JSON.stringify(summary)}
+
+      Return a concise yet comprehensive analysis suitable for direct display on an admin dashboard.`;
+
+    const model = this.ai.getGenerativeModel({
+      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.0-flash'),
+    });
+    const result = await model.generateContentStream(prompt);
+
+    return this.streamGenerator(result.stream);
+  }
+
+  private async *streamGenerator(
+    stream: AsyncIterable<any>,
+  ): AsyncGenerator<string, void, unknown> {
+    for await (const chunk of stream) {
+      const text = chunk.text();
+      yield text;
+    }
   }
 }
