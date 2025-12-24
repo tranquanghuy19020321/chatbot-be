@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -270,7 +271,7 @@ export class AdminController {
     description: 'Forbidden - User does not have admin role',
   })
   async streamAnalyzeStatistic(
-    @Query() query: MentalHealthStatisticQueryDto,
+    @Body() query: MentalHealthStatisticQueryDto,
     @Res() res: Response,
   ): Promise<void> {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
