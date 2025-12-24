@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -271,26 +272,33 @@ export class AdminController {
     description: 'Forbidden - User does not have admin role',
   })
   async streamAnalyzeStatistic(
-    @Body() query: MentalHealthStatisticQueryDto,
+    @Body() body: MentalHealthStatisticQueryDto,
     @Res() res: Response,
   ): Promise<void> {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Transfer-Encoding', 'chunked');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
     try {
-      const stream =
-        await this.adminService.streamAnalyzeStatisticResponse(query);
+      // Set headers for streaming
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
 
-      for await (const chunk of stream) {
-        res.write(chunk);
+      const stream =
+        await this.adminService.streamAnalyzeStatisticResponse(body);
+
+      // Stream response chunks to client
+      for await (const text of stream) {
+        res.write(`data: ${JSON.stringify({ text })}\n\n`);
       }
 
+      res.write('data: [DONE]\n\n');
       res.end();
-    } catch (error: any) {
-      res.status(500).write(`Error: ${error?.message}`);
-      res.end();
+    } catch (error) {
+      console.error('Error proxying request to Gemini:', error);
+      if (!res.headersSent) {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          error: 'Failed to process request',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
   }
 }
