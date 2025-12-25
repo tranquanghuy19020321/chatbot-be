@@ -319,6 +319,172 @@ export class AdminService {
     return formattedResult;
   }
 
+  async analyzeUserStatistic(
+    userId: number,
+    query: MentalHealthStatisticQueryDto,
+  ): Promise<DailyMentalHealthStatisticDto[]> {
+    // Verify user exists
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return this.getUserMentalHealthStatistics(userId, query);
+  }
+
+  async getUserMentalHealthStatistics(
+    userId: number,
+    query: MentalHealthStatisticQueryDto,
+  ): Promise<DailyMentalHealthStatisticDto[]> {
+    const { startDate, endDate } = query;
+
+    // Generate all dates between startDate and endDate using dayjs
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    const allDates: string[] = [];
+
+    let current = start;
+    while (current.isSameOrBefore(end, 'day')) {
+      allDates.push(current.format('YYYY-MM-DD'));
+      current = current.add(1, 'day');
+    }
+
+    // Query to get daily averages for specific user using raw SQL
+    const result = await this.mentalHealthEvaluationRepository
+      .createQueryBuilder('mhe')
+      .select([
+        'DATE(mhe.created_at) as date',
+        'AVG(mhe.stress_level) as avgStressLevel',
+        'AVG(mhe.gad7_score) as avgGad7Score',
+        'AVG(mhe.pss10_score) as avgPss10Score',
+        'AVG(mhe.mbi_emotional_exhaustion) as avgMbiEmotionalExhaustion',
+        'AVG(mhe.mbi_cynicism) as avgMbiCynicism',
+        'AVG(mhe.mbi_professional_efficacy) as avgMbiProfessionalEfficacy',
+        'COUNT(*) as totalRecords',
+      ])
+      .where('mhe.user_id = :userId', { userId })
+      .andWhere('mhe.created_at >= :startDate', { startDate })
+      .andWhere('mhe.created_at <= :endDate', { endDate })
+      .groupBy('DATE(mhe.created_at)')
+      .orderBy('DATE(mhe.created_at)', 'ASC')
+      .getRawMany();
+
+    // Create a map from the query results for quick lookup
+    const dataMap = new Map();
+    result.forEach((item) => {
+      // Convert ISO date to YYYY-MM-DD format for consistency
+      const date = dayjs(item.date).format('YYYY-MM-DD');
+      dataMap.set(date, item);
+    });
+
+    // Generate complete result with all dates
+    const formattedResult = allDates.map((date) => {
+      const data = dataMap.get(date);
+
+      if (data) {
+        // If data exists for this date, calculate averages
+        return {
+          date,
+          averages: {
+            stressLevel:
+              Math.round(parseFloat(data.avgStressLevel || '0') * 100) / 100,
+            gad7Score:
+              Math.round(parseFloat(data.avgGad7Score || '0') * 100) / 100,
+            pss10Score:
+              Math.round(parseFloat(data.avgPss10Score || '0') * 100) / 100,
+            mbiEmotionalExhaustion:
+              Math.round(
+                parseFloat(data.avgMbiEmotionalExhaustion || '0') * 100,
+              ) / 100,
+            mbiCynicism:
+              Math.round(parseFloat(data.avgMbiCynicism || '0') * 100) / 100,
+            mbiProfessionalEfficacy:
+              Math.round(
+                parseFloat(data.avgMbiProfessionalEfficacy || '0') * 100,
+              ) / 100,
+          },
+          totalRecords: parseInt(data.totalRecords),
+        };
+      } else {
+        // If no data exists for this date, return zeros
+        return {
+          date,
+          averages: {
+            stressLevel: 0,
+            gad7Score: 0,
+            pss10Score: 0,
+            mbiEmotionalExhaustion: 0,
+            mbiCynicism: 0,
+            mbiProfessionalEfficacy: 0,
+          },
+          totalRecords: 0,
+        };
+      }
+    });
+
+    return formattedResult;
+  }
+
+  async getUserEmoStatistic(
+    userId: number,
+    query: MentalHealthStatisticQueryDto,
+  ): Promise<DailyEmoStatisticDto[]> {
+    const { startDate, endDate } = query;
+
+    // Generate all dates between startDate and endDate using dayjs
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    const allDates: string[] = [];
+
+    let current = start;
+    while (current.isSameOrBefore(end, 'day')) {
+      allDates.push(current.format('YYYY-MM-DD'));
+      current = current.add(1, 'day');
+    }
+
+    // Query to get the latest emotion state for specific user on each date
+    const result = await this.mentalHealthEvaluationRepository
+      .createQueryBuilder('mhe')
+      .select([
+        'DATE(mhe.created_at) as date',
+        'mhe.emotion_state as emotionState',
+        'ROW_NUMBER() OVER (PARTITION BY DATE(mhe.created_at) ORDER BY mhe.created_at DESC) as rn',
+      ])
+      .where('mhe.user_id = :userId', { userId })
+      .andWhere('mhe.created_at >= :startDate', { startDate })
+      .andWhere('mhe.created_at <= :endDate', { endDate })
+      .getRawMany();
+
+    const latestRecords = result.filter((record) => record.rn === '1');
+
+    const dataMap = new Map();
+    latestRecords.forEach((item) => {
+      const date = dayjs(item.date).format('YYYY-MM-DD');
+      dataMap.set(date, item.emotionState);
+    });
+
+    // Generate complete result with all dates
+    const formattedResult = allDates.map((date) => {
+      const emotionState = dataMap.get(date);
+      const emoData = {
+        happy: emotionState === 'HAPPY' ? 1 : 0,
+        sad: emotionState === 'SAD' ? 1 : 0,
+        angry: emotionState === 'ANGRY' ? 1 : 0,
+        neutral: emotionState === 'NEUTRAL' ? 1 : 0,
+      };
+
+      return {
+        date,
+        emo: emoData,
+      };
+    });
+
+    return formattedResult;
+  }
+
   async streamAnalyzeStatisticResponse(
     query: MentalHealthStatisticQueryDto,
   ): Promise<AsyncGenerator<string, void, unknown>> {
@@ -381,6 +547,86 @@ export class AdminService {
       Summary Statistics: ${JSON.stringify(summary)}
 
       Return a concise yet comprehensive analysis suitable for direct display on an admin dashboard.`;
+
+    const model = this.ai.getGenerativeModel({
+      model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.0-flash'),
+    });
+    const result = await model.generateContentStream(prompt);
+
+    return this.streamGenerator(result.stream);
+  }
+
+  async streamAnalyzeUserStatisticResponse(
+    userId: number,
+    query: MentalHealthStatisticQueryDto,
+  ): Promise<AsyncGenerator<string, void, unknown>> {
+    // Verify user exists
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'name', 'email'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    const mentalHealthStatistic = await this.getUserMentalHealthStatistics(
+      userId,
+      query,
+    );
+    const emoStatistic = await this.getUserEmoStatistic(userId, query);
+
+    const prompt = `
+      You are an AI assistant specialized in analyzing individual mental health data for an educational admin dashboard.
+      CONTEXT:
+      The data represents mental health evaluations of a specific student (User ID: ${userId}, Name: ${user.name}) over the period from ${query?.startDate} to ${query?.endDate}. 
+      This is individual-level data, not group averages.
+
+      YOUR TASK:
+      Analyze the provided data based on:
+      1. Daily psychological indicators for this specific user:
+        - Stress Level
+        - GAD-7 (anxiety indicator)
+        - PSS-10 (perceived stress)
+        - MBI:
+          - Emotional Exhaustion
+          - Cynicism
+          - Professional Efficacy
+        - Number of records per day
+
+      2. Daily emotional state for this user:
+        - happy, sad, angry, neutral (0 or 1 for each day)
+
+      ANALYSIS REQUIREMENTS:
+      - Identify personal trends across ${query?.startDate} to ${query?.endDate} (improving, declining, fluctuating).
+      - Interpret indicator levels as low / moderate / high based on commonly accepted scale meanings, WITHOUT making medical or clinical diagnoses.
+      - Analyze patterns between psychological indicators and emotional states.
+      - Assess data consistency and frequency of evaluations.
+      - Identify concerning patterns or positive developments.
+      - Chỉ trả lời bằng tiếng Việt.
+
+      OUTPUT GUIDELINES:
+      - Viết bằng tiếng Việt rõ ràng, chuyên nghiệp và trung tính.
+      - Cấu trúc output thành các phần rõ ràng:
+        1. Tổng quan dữ liệu cá nhân
+        2. Xu hướng sức khỏe tâm thần
+        3. Phân tích trạng thái cảm xúc
+        4. Các tín hiệu cần chú ý
+        5. Tính nhất quán dữ liệu
+        6. Khuyến nghị hỗ trợ
+
+      CONSTRAINTS:
+      - KHÔNG đưa ra chẩn đoán y tế hay lời khuyên điều trị cá nhân.
+      - KHÔNG sử dụng ngôn ngữ phán xét hoặc gây lo lắng.
+      - Tập trung vào insights cá nhân nhưng phù hợp cho admin xem.
+      - 'totalRecords' là số lần đánh giá của user trong ngày đó
+
+      INPUT DATA:
+      User Information: User ID ${userId}, Name: ${user.name}
+      Mental Health Statistics: ${JSON.stringify(mentalHealthStatistic)}
+      Emotional Statistics: ${JSON.stringify(emoStatistic)}
+
+      Trả về một phân tích ngắn gọn nhưng toàn diện phù hợp để hiển thị trực tiếp trên dashboard admin.`;
 
     const model = this.ai.getGenerativeModel({
       model: this.configService.get<string>('GEMINI_MODEL', 'gemini-2.0-flash'),

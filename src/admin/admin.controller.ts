@@ -249,6 +249,76 @@ export class AdminController {
     return this.adminService.GetADminDashboardEmo(query);
   }
 
+  @Get('users/:userId/analyze-statistic')
+  @ApiOperation({
+    summary: 'Get analyze statistics for a specific user (Admin only)',
+    description:
+      'Retrieve detailed mental health and emotional statistics analysis for a specific user within a date range. Only accessible by admin users.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID of the user whose statistics to analyze',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User statistics analysis retrieved successfully',
+    type: [DailyMentalHealthStatisticDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async analyzeUserStatistic(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() query: MentalHealthStatisticQueryDto,
+  ): Promise<DailyMentalHealthStatisticDto[]> {
+    return await this.adminService.analyzeUserStatistic(userId, query);
+  }
+
+  @Get('users/:userId/emo')
+  @ApiOperation({
+    summary: 'Get daily emotional statistics for a specific user (Admin only)',
+    description:
+      'Retrieve daily emotional statistics for a specific user within a date range. Only accessible by admin users.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID of the user whose emotional statistics to retrieve',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User daily emotional statistics retrieved successfully',
+    type: [DailyEmoStatisticDto],
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async getUserDailyEmo(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() query: MentalHealthStatisticQueryDto,
+  ): Promise<DailyEmoStatisticDto[]> {
+    return await this.adminService.getUserEmoStatistic(userId, query);
+  }
+
   @Post('/dashboard/analyze-statistic/stream')
   @ApiOperation({
     summary: 'Stream AI analysis of mental health statistics (Admin only)',
@@ -283,6 +353,72 @@ export class AdminController {
 
       const stream =
         await this.adminService.streamAnalyzeStatisticResponse(body);
+
+      // Stream response chunks to client
+      for await (const text of stream) {
+        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+      }
+
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } catch (error) {
+      console.error('Error proxying request to Gemini:', error);
+      if (!res.headersSent) {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+          error: 'Failed to process request',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+  }
+
+  @Post('users/:userId/analyze-statistic/stream')
+  @ApiOperation({
+    summary:
+      'Stream AI analysis of user-specific mental health statistics (Admin only)',
+    description:
+      'Get a streaming AI analysis of mental health and emotional statistics for a specific user within a date range. Returns real-time AI-generated insights in Vietnamese.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'ID of the user whose statistics to analyze',
+    example: 1,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'AI analysis stream for user started successfully',
+    schema: {
+      type: 'string',
+      description: 'Streaming text analysis in Vietnamese',
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User does not have admin role',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async streamAnalyzeUserStatistic(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() body: MentalHealthStatisticQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      // Set headers for streaming
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const stream = await this.adminService.streamAnalyzeUserStatisticResponse(
+        userId,
+        body,
+      );
 
       // Stream response chunks to client
       for await (const text of stream) {
